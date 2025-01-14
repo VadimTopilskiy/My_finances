@@ -6,8 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db.models import User
 from uuid import UUID
 
-from repository.hashing import Hasher
-
 
 class UserDAL:
     """Data Access Layer for operating user info"""
@@ -55,3 +53,12 @@ class UserDAL:
         user_row = res.fetchone()
         if user_row is not None:
             return user_row[0]
+
+    async def get_user_by_email(self, email: str) -> Union[User, None]:
+        query = select(User).where(User.email == email)
+        res = await self.db_session.execute(query)
+        user_row = res.fetchone()
+        if user_row is not None:
+            return user_row[0]
+
+
