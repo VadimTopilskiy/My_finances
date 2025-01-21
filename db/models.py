@@ -40,7 +40,7 @@ class Finances(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False)
-    u_cat_id = Column(UUID(as_uuid=True), ForeignKey('categories.id'), nullable=False)
+    u_cat_id = Column(UUID(as_uuid=True), ForeignKey('user_categories.id'), nullable=False)
     amount = Column(Numeric(10, 2), nullable=False)
     balance = Column(Numeric(10, 2), nullable=False)
     type_of_operation = Column(Enum(CategoryType), nullable=False)
@@ -54,7 +54,7 @@ class Categories(Base):
     __tablename__ = "user_categories"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name_cat = Column(String, unique=True, nullable=False)
+    name_cat = Column(String, unique=False, nullable=False)
     type = Column(Enum(CategoryType), nullable=False)
     user_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False)
 

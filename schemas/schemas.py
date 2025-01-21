@@ -4,21 +4,10 @@ from typing import Optional
 from fastapi import HTTPException
 from pydantic import BaseModel, EmailStr, field_validator
 
+from db.models import CategoryType
+
 LETTER_MATCH_PATTERN = re.compile(r"^[а-яА-Яa-zA-Z\-]+$")
-
-
-class TunedModel(BaseModel):
-    class Config:
-        """tells pydantic to convert even non dict obj to json"""
-        from_attributes = True
-
-
-class ShowUser(TunedModel):
-    user_id: uuid.UUID
-    name: str
-    surname: str
-    email: EmailStr
-    is_active: bool
+LETTER_MATCH_PATTERN_for_category = re.compile(r"^[а-яА-Я]+$")
 
 
 def _validate_name(value):
@@ -35,6 +24,28 @@ def _validate_surname(value):
             status_code=422, detail="Surname should contains only letters"
         )
     return value
+
+
+def _validate_name_category(value):
+    if value and not LETTER_MATCH_PATTERN_for_category.match(value):
+        raise HTTPException(
+            status_code=422, detail="Name should contains only letters"
+        )
+    return value
+
+
+class TunedModel(BaseModel):
+    class Config:
+        """tells pydantic to convert even non dict obj to json"""
+        from_attributes = True
+
+
+class ShowUser(TunedModel):
+    id: uuid.UUID
+    name: str
+    surname: str
+    email: EmailStr
+    is_active: bool
 
 
 class UserCreate(BaseModel):
@@ -73,3 +84,34 @@ class DeleteUserResponse(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+
+class CategoryCreate(TunedModel):
+    id: uuid.UUID
+    name_cat: str
+    type: CategoryType
+
+    @field_validator("name_cat")
+    def validate_name_category(cls, value):
+        return _validate_name_category(value)
+
+
+class CategoryShow(TunedModel):
+    id: uuid.UUID
+    name_cat: str
+    type: CategoryType
+    user_id: uuid.UUID
+
+
+class CategoryUpdate(BaseModel):
+    id: uuid.UUID
+    name_cat: str
+    type: CategoryType
+
+    @field_validator("name_cat")
+    def validate_name_category(cls, value):
+        return _validate_name_category(value)
+
+
+class DeleteCategoryResponse(BaseModel):
+    deleted_category_id: uuid.UUID
