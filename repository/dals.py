@@ -1,8 +1,11 @@
-from typing import Union
-from sqlalchemy import select, update, and_
+import uuid
+from datetime import datetime
+from decimal import Decimal
+from typing import Union, Optional
+from sqlalchemy import select, update, and_, desc, text, func
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
-from db.models import User, CategoryType, Categories
+from db.models import User, CategoryType, Categories, Finances
 from uuid import UUID
 
 from schemas.schemas import CategoryShow
@@ -115,3 +118,38 @@ class CategoryDAL:
         await self.db_session.commit()
 
         return category.id
+
+
+class FinancesDAL:
+    def __init__(self, db_session: AsyncSession):
+        self.db_session = db_session
+
+    async def add_transaction(
+            self,
+            user_id: UUID,
+            category_id: UUID,
+            amount: float,
+            type_of_operation: CategoryType
+    ):
+        new_transaction = Finances(
+            user_id=user_id,
+            category_id=category_id,
+            amount=amount,
+            type_of_operation=type_of_operation,
+        )
+        self.db_session.add(new_transaction)
+        await self.db_session.commit()
+        return new_transaction
+
+    async def get_current_balance(self, user_id: uuid.UUID) -> Optional[float]:
+        query_income = (
+            select(func.sum(Finances.amount))
+            .where(Finances.user_id == user_id, Finances.type_of_operation == CategoryType.income))
+        result = await self.db_session.execute(query_income)
+        sum_income = result.scalar() or 0
+        query_expense = (
+            select(func.sum(Finances.amount))
+            .where(Finances.user_id == user_id, Finances.type_of_operation == CategoryType.expense))
+        result = await self.db_session.execute(query_expense)
+        sum_expense = result.scalar() or 0
+        return float(sum_income - sum_expense)

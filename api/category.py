@@ -1,51 +1,54 @@
-from fastapi import HTTPException
+from typing import List
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from service.auth import get_current_user_from_token
+from service.category import _create_new_category, _update_category, _delete_category, _get_categories_by_user_id
+from db.models import User
+from db.session import get_db
+from schemas.schemas import CategoryCreate, CategoryShow, DeleteCategoryResponse
 from uuid import UUID
 
-from repository.dals import CategoryDAL
-from schemas.schemas import CategoryCreate, CategoryUpdate
+category_router = APIRouter()
 
 
-async def _create_new_category(user_id: UUID, body: CategoryCreate, db: AsyncSession):
-    async with db.begin():
-        category_dal = CategoryDAL(db)
-        category = await category_dal.create_new_category(
-            user_id=user_id,
-            name_cat=body.name_cat,
-            category_type=body.type
-        )
-        return category
+@category_router.post("/categories/", response_model=CategoryShow)
+async def create_category(
+        body: CategoryCreate,
+        db: AsyncSession = Depends(get_db),
+        current_user: User = Depends(get_current_user_from_token)
+):
+    return await _create_new_category(body.id, body, db)
 
 
-async def _update_category(category_id: UUID, user_id: UUID, body: CategoryUpdate, db: AsyncSession):
-    async with db.begin():
-        category_dal = CategoryDAL(db)
-        updated_category = await category_dal.update_category(
-            category_id=category_id,
-            name=body.name_cat,
-            type=body.type,
-            user_id=user_id,
-        )
-        if not updated_category:
-            raise HTTPException(status_code=404, detail="category not found")
-        return updated_category
+@category_router.put("/categories/{category_id}", response_model=CategoryShow)
+async def update_category(
+        category_id: UUID,
+        user_id: UUID,
+        category: CategoryCreate,
+        db: AsyncSession = Depends(get_db),
+        current_user: User = Depends(get_current_user_from_token)
+):
+    return await _update_category(category_id, user_id, category, db)
 
 
-async def _get_categories_by_user_id(user_id: UUID, db: AsyncSession):
-    async with db.begin():
-        category_dal = CategoryDAL(db)
-        categories = await category_dal.get_categories_by_user_id(
-            user_id=user_id)
-        return categories
+@category_router.delete("/categories/{category_id}", response_model=DeleteCategoryResponse)
+async def delete_category(
+        category_id: UUID,
+        user_id: UUID,
+        db: AsyncSession = Depends(get_db),
+        current_user: User = Depends(get_current_user_from_token)
+):
+    deleted_category_id = await _delete_category(category_id, user_id, db)
+    if deleted_category_id is None:
+        raise HTTPException(status_code=404, detail=f"Category with id {category_id} not found.")
+    return DeleteCategoryResponse(deleted_category_id=deleted_category_id)
 
 
-async def _delete_category(category_id: UUID, user_id: UUID, db: AsyncSession):
-    async with db.begin():
-        category_dal = CategoryDAL(db)
-        deleted_category_id = await category_dal.delete_category(
-            category_id=category_id,
-            user_id=user_id,
-        )
-        if not deleted_category_id:
-            raise HTTPException(status_code=404, detail="Category not found or not authorized")
-        return deleted_category_id
+@category_router.get("/categories/", response_model=List[CategoryShow])
+async def get_categories_by_user_id(
+        db: AsyncSession = Depends(get_db),
+        current_user: User = Depends(get_current_user_from_token)):
+    user_id = current_user.id
+    categories = await _get_categories_by_user_id(user_id, db)
+    return categories
+

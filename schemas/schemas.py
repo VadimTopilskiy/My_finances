@@ -2,7 +2,10 @@ import re
 import uuid
 from typing import Optional
 from fastapi import HTTPException
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, field_validator, Field
+from enum import Enum
+
+from sqlalchemy import Numeric
 
 from db.models import CategoryType
 
@@ -115,3 +118,21 @@ class CategoryUpdate(BaseModel):
 
 class DeleteCategoryResponse(BaseModel):
     deleted_category_id: uuid.UUID
+
+
+class TransactionsCreate(BaseModel):
+    category_id: uuid.UUID
+    amount: float = Field(..., gt=0)
+    type_of_operation: CategoryType
+
+
+class FinanceShow(BaseModel):
+    id: uuid.UUID
+    u_cat_id: uuid.UUID
+    amount: float
+    type_of_operation: CategoryType
+    date: str
+
+
+class CurrentBalanceResponse(BaseModel):
+    current_balance: float
