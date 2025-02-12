@@ -136,3 +136,7 @@ class FinanceShow(BaseModel):
 
 class CurrentBalanceResponse(BaseModel):
     current_balance: float
+
+
+class ConvertedBalances(BaseModel):
+    balances: dict[str, float]

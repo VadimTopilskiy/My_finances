@@ -72,7 +72,7 @@ class CategoryDAL:
         self.db_session = db_session
 
     async def create_default_categories(self, user_id: UUID, name_cat: str, category_type: CategoryType):
-        default_category = Categories(user_id=user_id, name_cat=name_cat, type=category_type)
+        default_category = Categories(user_id=user_id, name_category=name_cat, type=category_type)
         self.db_session.add(default_category)
         await self.db_session.flush()
         return default_category

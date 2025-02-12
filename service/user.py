@@ -19,21 +19,21 @@ async def _create_new_user(body: UserCreate, db) -> ShowUser:
             hashed_password=Hasher.get_password_hash(body.password)
         )
         default_categories = [
-            {"name_cat": "Транспорт", "type": CategoryType.expense},
-            {"name_cat": "Еда", "type": CategoryType.expense},
-            {"name_cat": "Развлечения", "type": CategoryType.expense},
-            {"name_cat": "Образовательные услуги", "type": CategoryType.expense},
-            {"name_cat": "ЖКХ", "type": CategoryType.expense},
-            {"name_cat": "Одежда", "type": CategoryType.expense},
-            {"name_cat": "Здоровье", "type": CategoryType.expense},
-            {"name_cat": "Зарплата", "type": CategoryType.income},
+            {"name_category": "Транспорт", "type": CategoryType.expense},
+            {"name_category": "Еда", "type": CategoryType.expense},
+            {"name_category": "Развлечения", "type": CategoryType.expense},
+            {"name_category": "Образовательные услуги", "type": CategoryType.expense},
+            {"name_category": "ЖКХ", "type": CategoryType.expense},
+            {"name_category": "Одежда", "type": CategoryType.expense},
+            {"name_category": "Здоровье", "type": CategoryType.expense},
+            {"name_category": "Зарплата", "type": CategoryType.income},
         ]
 
         category_dal = CategoryDAL(db)
         for category in default_categories:
             await category_dal.create_default_categories(
                 user_id=user.id,
-                name_cat=category["name_cat"],
+                name_cat=category["name_category"],
                 category_type=category["type"],
             )
         return user

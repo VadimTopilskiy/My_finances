@@ -41,9 +41,6 @@ async def delete_user(
 
 @auth_router.get("/", response_model=ShowUser)
 async def get_user_by_id(
-        # user_id: UUID, db: AsyncSession = Depends(get_db),
         current_user: User = Depends(get_current_user_from_token)):
-    # user = await _get_user_by_id(user_id, db)
-    # if user is None:
-    #     raise HTTPException(status_code=404, detail=f"User with id {user_id} not found.")
+
     return current_user
