@@ -34,9 +34,9 @@ import config
 async def current_exchange_rate():
     rates = {
         "RUB": 100.0,
-        "EUR": 1.11,
-        "USD": 1.15,
-        "CNY": 7.8
+        "EUR": 1.12,
+        "USD": 1.13,
+        "CNY": 7.6
     }
 
     eur_to_rub = rates["RUB"]

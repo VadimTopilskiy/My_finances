@@ -9,12 +9,20 @@ from service.external_api import convert_currency, current_exchange_rate
 from service.transaction import _get_current_balance
 import asyncio
 from redis_file import get_redis
+from redis_test import router as redis_router
+
 
 app = FastAPI()
 app.include_router(routers)
+app.include_router(redis_router)
 
 if __name__ == "__main__":
     uvicorn.run('main:app', reload=True)
+
+
+
+
+
 
 
 @app.websocket("/ws")
