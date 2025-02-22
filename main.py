@@ -1,5 +1,7 @@
 import uvicorn
 from fastapi import FastAPI, HTTPException
+from starlette.websockets import WebSocketState
+
 from api import routers
 from fastapi import Depends, WebSocket, WebSocketDisconnect
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,18 +13,12 @@ import asyncio
 from redis_file import get_redis
 from redis_test import router as redis_router
 
-
 app = FastAPI()
 app.include_router(routers)
 app.include_router(redis_router)
 
 if __name__ == "__main__":
     uvicorn.run('main:app', reload=True)
-
-
-
-
-
 
 
 @app.websocket("/ws")
@@ -44,6 +40,8 @@ async def balance_websocket(
 
     try:
         while True:
+            if websocket.client_state == WebSocketState.DISCONNECTED:
+                break
 
             balance_rub = await redis_client.get(f"balance:{user_id}")
             if balance_rub:
@@ -59,14 +57,15 @@ async def balance_websocket(
                 rates, eur_to_rub = await current_exchange_rate()
                 await redis_client.set("cached_rates", str((rates, eur_to_rub)), ex=600)
 
-            last_balance_rub = await _get_current_balance(user_id, db)
-            last_rates, last_eur_to_rub = await current_exchange_rate()
-
+            last_balance_rub = await _get_current_balance.__wrapped__(user_id, db)
+            last_rates, last_eur_to_rub = await current_exchange_rate.__wrapped__()
             if rates != last_rates or balance_rub != last_balance_rub:
                 await redis_client.set(f"balance:{user_id}", last_balance_rub, ex=300)
                 await redis_client.set("cached_rates", str((last_rates, last_eur_to_rub)), ex=600)
                 converted_balances = await convert_currency(balance_rub, rates, eur_to_rub)
                 await websocket.send_json({"balance": converted_balances})
+
+
 
             await asyncio.sleep(5)
 

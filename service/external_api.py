@@ -1,11 +1,9 @@
+import pickle
+from redis_file import get_redis
 import httpx
-from typing import Dict
-
+from typing import Dict, Any, Callable
+import functools
 import config
-
-
-
-
 
 
 # async def current_exchange_rate(base_currency: str = "EUR") -> (Dict[str, float], float):
@@ -31,12 +29,31 @@ import config
 #         else:
 #             response.raise_for_status()
 
+
+def cache_result(custom_key: str, ttl: int = 60):
+    def decorator(func: Callable):
+        @functools.wraps(func)
+        async def wrapper(*args, **kwargs) -> Any:
+            redis_conn = await get_redis()
+            cached_result = await redis_conn.get(custom_key)
+            if cached_result is not None:
+                return pickle.loads(cached_result)
+            result = await func(*args, **kwargs)
+            await redis_conn.set(custom_key, pickle.dumps(result), ex=ttl)
+            return result
+
+        return wrapper
+
+    return decorator
+
+
+@cache_result(custom_key="rates:latest", ttl=300)
 async def current_exchange_rate():
     rates = {
         "RUB": 100.0,
-        "EUR": 1.12,
-        "USD": 1.13,
-        "CNY": 7.6
+        "EUR": 1.1,
+        "USD": 1.11,
+        "CNY": 7.4
     }
 
     eur_to_rub = rates["RUB"]
