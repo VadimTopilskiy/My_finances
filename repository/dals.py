@@ -1,15 +1,13 @@
 import uuid
-from datetime import datetime
-from decimal import Decimal
+
 from typing import Union, Optional
-from sqlalchemy import select, update, and_, desc, text, func
+from sqlalchemy import update, and_, func, extract
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 from db.models import User, CategoryType, Categories, Finances
 from uuid import UUID
-
-from schemas.schemas import CategoryShow
-
+from sqlalchemy.orm import joinedload
+from sqlalchemy.future import select
 
 class UserDAL:
     """Data Access Layer for operating user info"""
@@ -29,7 +27,7 @@ class UserDAL:
         return new_user
 
     async def update_user(self, user_id: UUID, **kwargs):
-        query = select(User).where(User.user_id == user_id)
+        query = select(User).where(User.id == user_id)
         result = await self.db_session.execute(query)
         try:
             user = result.scalar_one()
@@ -153,3 +151,51 @@ class FinancesDAL:
         result = await self.db_session.execute(query_expense)
         sum_expense = result.scalar() or 0
         return float(sum_income - sum_expense)
+
+    async def get_transactions_for_month(self, user_id: uuid.UUID, year: int, month: int):
+        result = await self.db_session.execute(
+            select(Finances)
+            .join(User)
+            .options(joinedload(Finances.categories))  # Загрузить категории вместе с финансами
+            .filter(User.id == user_id)
+            .filter(func.extract('year', Finances.date) == year)
+            .filter(func.extract('month', Finances.date) == month)
+        )
+        return result.scalars().all()
+
+
+class ReportDAL:
+    def __init__(self, db_session: AsyncSession):
+        self.db_session = db_session
+
+    async def get_transactions(self, user_id: UUID, year: int, month: int):
+        query = (
+            select(Finances)
+            .where(
+                Finances.user_id == user_id,
+                extract("year", Finances.date) == year,
+                extract("month", Finances.date) == month
+            )
+        )
+        result = await self.db_session.execute(query)
+        return result.scalars().all()
+
+    # async def get_transactions_with_categories(self, user_id: UUID, year: int, month: int):
+    #     result = await self.db_session.execute(
+    #         select(Finances)
+    #         .filter(
+    #             Finances.user_id == user_id,
+    #             extract("year", Finances.date) == year,
+    #             extract("month", Finances.date) == month
+    #         )
+    #     )
+    #     return result.scalars().all()
+
+    async def get_transactions_with_categories(db: AsyncSession, user_id: UUID):
+        stmt = (
+            select(Finances)
+            .where(Finances.user_id == user_id)
+            .options(joinedload(Finances.categories))  # Загрузка связанных данных
+        )
+        result = await db.execute(stmt)
+        return result.scalars().all()

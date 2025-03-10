@@ -140,3 +140,14 @@ class CurrentBalanceResponse(BaseModel):
 
 class ConvertedBalances(BaseModel):
     balances: dict[str, float]
+
+
+class ReportRequest(BaseModel):
+    user_id: uuid.UUID
+    year: int
+    month: int
+
+
+class ReportResponse(BaseModel):
+    message: Optional[str] = Field(None, description="Статус операции")
+    error: Optional[str] = Field(None, description="Ошибка (если есть)")

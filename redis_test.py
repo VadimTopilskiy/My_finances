@@ -22,5 +22,5 @@ async def get_value(key: str):
     value = await redis.get(key)
     await redis.close()
     if value is None:
-        return {"message": "Key not found"}
+        return {"message": "Ключ не установлен"}
     return {"key": key, "value": value}

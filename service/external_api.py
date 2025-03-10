@@ -4,6 +4,7 @@ import httpx
 from typing import Dict, Any, Callable
 import functools
 import config
+import json
 
 
 # async def current_exchange_rate(base_currency: str = "EUR") -> (Dict[str, float], float):
@@ -33,7 +34,7 @@ import config
 def cache_result(custom_key: str, ttl: int = 60):
     def decorator(func: Callable):
         @functools.wraps(func)
-        async def wrapper(*args, **kwargs) -> Any:
+        async def wrapper(*args, **kwargs):
             redis_conn = await get_redis()
             cached_result = await redis_conn.get(custom_key)
             if cached_result is not None:

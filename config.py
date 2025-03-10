@@ -17,3 +17,5 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
 
 FIXER_API_URL = os.getenv("FIXER_API_URL", "default_api_url")
 API_KEY = os.getenv("API_KEY", "default_api_key")
+
+
